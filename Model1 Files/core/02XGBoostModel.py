@@ -14,7 +14,7 @@ def main():
     df = pd.read_csv(file_path)
     #train_df, val_df = train_test_split(df, test_size=0.3, random_state=42, shuffle=True)
 
-    split_idx = int(len(df) * 0.8)
+    split_idx = int(len(df) * 0.7)
     train_df = df.iloc[:split_idx]
     val_df   = df.iloc[split_idx:]
 
@@ -29,7 +29,7 @@ def main():
 
     #Train XGBoost model
     model = XGBRegressor(
-        max_depth=5,             
+        max_depth=3,             
         learning_rate=0.03,      
         n_estimators=2000,          
         early_stopping_rounds=30,
@@ -64,11 +64,5 @@ def main():
     plt.ylabel("Value")
     plt.title("Actual vs Predicted over Time")
     plt.show()
-    #Baseline 1: Naive (yesterday)
-    y_pred_naive = val_df["lag1"]
-    mae_naive  = mean_absolute_error(y_val, y_pred_naive)
-    mape_naive = mean_absolute_percentage_error(y_val, y_pred_naive)
-    print(f"Naive mae: {mae_naive:.2f}")
-    print(f"Naive mape: {mape_naive:.2f}")
 if __name__ == '__main__':
     main()
