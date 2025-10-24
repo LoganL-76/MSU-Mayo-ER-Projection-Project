@@ -18,6 +18,6 @@ def main():
 
     # Make predictions
     predictions = model.predict(new_data)
-    pass
+    
 if __name__ == '__main__':
     main()
