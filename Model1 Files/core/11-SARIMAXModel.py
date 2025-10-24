@@ -3,18 +3,19 @@ import os
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-import numpy as np
+import matplotlib 
+print(matplotlib.get_backend())
 
-# ==========================
-# 1️⃣ Load and prepare data
-# ==========================
-data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "MSU_STUDENT_DATA_DE-IDENTIFIED.csv")
-df = pd.read_csv(data_path)
+# Load CSV data
+df = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "MSU_STUDENT_DATA_DE-IDENTIFIED.csv"))
 
-# Convert to datetime
+# Convert 'ED_ADMIT_DATE' to datetime
 df['ED_ADMIT_DATE'] = pd.to_datetime(df['ED_ADMIT_DATE'], errors='coerce')
 
-# Sort and aggregate daily counts
+# Sort and set index
+df = df.sort_values('ED_ADMIT_DATE').set_index('ED_ADMIT_DATE')
+
+# Aggregate daily admission counts
 daily_counts = (
     df.groupby('ED_ADMIT_DATE')
     .size()
@@ -22,56 +23,37 @@ daily_counts = (
     .to_frame()
 )
 
-# Ensure datetime index with daily frequency
-daily_counts = daily_counts.sort_index()
-daily_counts.index = pd.DatetimeIndex(daily_counts.index, name='ED_ADMIT_DATE')
-daily_counts = daily_counts.asfreq('D')  # <== adds daily frequency info
+# Ensure daily frequency (fill missing days with 0 admissions)
+daily_counts = daily_counts.asfreq('D', fill_value=0)
 
 print(daily_counts.head())
 print(daily_counts.index)
 
-# ==========================
-# 2️⃣ Train-test split
-# ==========================
+# Split data into train and test sets
 train = daily_counts.iloc[:-14]
 test = daily_counts.iloc[-14:]
 
-# ==========================
-# 3️⃣ Fit SARIMAX model
-# ==========================
+# Fit SARIMAX model
 model = SARIMAX(
     train['admissions'],
     order=(1, 1, 1),
-    seasonal_order=(1, 1, 1, 365),
+    seasonal_order=(1, 1, 1, 7),
     enforce_stationarity=False,
     enforce_invertibility=False
 )
 results = model.fit(disp=False)
 print(results.summary())
 
-# Optional diagnostics
+# Diagnostic plots
 results.plot_diagnostics(figsize=(15, 12))
 plt.show()
 
-# ==========================
-# 4️⃣ Forecasting
-# ==========================
-forecast_steps = len(test) + 14  # Forecast for test period + 1 year
+# Forecasting
+forecast_steps = len(test) + 14
 forecast = results.get_forecast(steps=forecast_steps)
-
-# Create forecast index starting the day after training data ends
-forecast_index = pd.date_range(
-    start=train.index[-1] + pd.Timedelta(days=1),
-    periods=forecast_steps,
-    freq='D'
-)
-
 forecast_df = forecast.summary_frame()
-forecast_df.index = forecast_index  # align to actual dates
 
-# ==========================
-# 5️⃣ Plot results
-# ==========================
+# Plot observed vs forecast
 plt.figure(figsize=(12, 6))
 plt.plot(daily_counts.index, daily_counts['admissions'], label='Observed', color='blue')
 plt.plot(forecast_df.index, forecast_df['mean'], label='Forecast', color='orange')
@@ -89,11 +71,10 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.show()
 
-# ==========================
-# 6️⃣ Evaluate (if test data exists)
-# ==========================
+# Evaluate on test set
 if not test.empty:
     pred = forecast_df['mean'].iloc[:len(test)]
     mae = mean_absolute_error(test['admissions'], pred)
-    rmse = np.sqrt(mean_squared_error(test['admissions'], pred))
+    rmse = mean_squared_error(test['admissions'], pred) ** 0.5  # fixed 'squared' issue
     print(f"\n📊 Evaluation on test set:\nMAE = {mae:.2f}\nRMSE = {rmse:.2f}")
+
