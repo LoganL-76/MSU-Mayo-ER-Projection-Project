@@ -16,7 +16,7 @@ def main():
 
     #adding other time date based features
     df["day_of_week"] = df["ED_ADMIT_DATE"].dt.day_name()
-    df["month"] = df["ED_ADMIT_DATE"].dt.month_name()
+    #df["month"] = df["ED_ADMIT_DATE"].dt.month_name()
     def get_season(date):
         m=date.month
         if m in [12, 1, 2]:
@@ -51,9 +51,9 @@ def main():
 
     #preproccess weather data
     file_path = os.path.join(BASE_DIR,"..", "data", "weather_data.csv")
-    wdf= pd.read_csv(file_path)[["DATE","TAVG (Degrees Fahrenheit)","TMAX (Degrees Fahrenheit)","TMIN (Degrees Fahrenheit)","PRCP (Inches)"]]
+    wdf= pd.read_csv(file_path)[["DATE","TMAX (Degrees Fahrenheit)","TMIN (Degrees Fahrenheit)","PRCP (Inches)"]]
     wdf["PRCP (Inches)"] = wdf["PRCP (Inches)"].fillna(0)
-    for col in ["TAVG (Degrees Fahrenheit)", "TMAX (Degrees Fahrenheit)", "TMIN (Degrees Fahrenheit)"]:
+    for col in ["TMAX (Degrees Fahrenheit)", "TMIN (Degrees Fahrenheit)"]:
         wdf[col] = wdf[col].fillna(wdf[col].mean())
     wdf["DATE"] = pd.to_datetime(wdf["DATE"])
 
@@ -64,11 +64,8 @@ def main():
 
     #adding rolling windows and lag features 
     merged["roll14"] = merged["count"].shift(1).rolling(14).mean()
-    merged["roll7"] = merged["count"].shift(1).rolling(7).mean()
-    merged["roll30"] = merged["count"].shift(20).rolling(30).mean()
-    merged["lag1"] = merged["count"].shift(1)    # yesterday
-    merged["lag2"] = merged["count"].shift(2)    # 2 days ago
-    merged["lag7"] = merged["count"].shift(7) 
+    merged["roll30"] = merged["count"].shift(1).rolling(30).mean()
+    merged["lag7"] = merged["count"].shift(1) 
     merged.dropna(subset=["roll30"], inplace=True)
 
 
