@@ -11,8 +11,8 @@ def main():
         "wed"   :  [0,1],
         "date":    pd.to_datetime(["2025-10-27", "2025-10-28"])
     })
-    add_weaher(new_data)
-def add_weaher(df):
+    add_weather(new_data)
+def add_weather(df):
     start = df["date"].min()
     end = df["date"].max()
     start_date = start.strftime("%Y-%m-%d")
