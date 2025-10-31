@@ -13,8 +13,8 @@ def main():
     })
     add_weather(new_data)
 def add_weather(df):
-    start = df["date"].min()
-    end = df["date"].max()
+    start = df["ED_ADMIT_DATE"].min()
+    end = df["ED_ADMIT_DATE"].max()
     start_date = start.strftime("%Y-%m-%d")
     end_date = end.strftime("%Y-%m-%d")
 
